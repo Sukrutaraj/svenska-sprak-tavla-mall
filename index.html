@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Språktavla – Byggare</title>
+
+<style>
+body{
+  font-family:sans-serif;
+  background:#f5f5f5;
+  text-align:center;
+  padding:20px;
+  max-width:900px;
+  margin:auto;
+}
+
+.section{
+  background:white;
+  padding:12px;
+  margin:10px auto;
+  border-radius:12px;
+}
+
+input[type="text"], select{
+  width:90%;
+  padding:8px;
+  margin:6px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:15px;
+}
+
+.cell{
+  border:1px solid #eee;
+  border-radius:10px;
+  padding:10px;
+  margin:8px 0;
+  text-align:left;
+}
+
+img{
+  max-height:100px;
+  margin-top:6px;
+  border-radius:8px;
+  display:block;
+}
+
+.smallBtn{
+  background:#eee;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  margin:3px;
+  border:none;
+  font-size:14px;
+}
+
+.tts-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:6px 0;
+  flex-wrap:wrap;
+}
+
+.tts-row input[type="text"]{
+  flex:1;
+  width:auto;
+  margin:0;
+}
+
+.lang-label{
+  font-size:13px;
+  font-weight:bold;
+  min-width:28px;
+  color:#555;
+}
+
+.play-tts{
+  background:#1976D2;
+  color:white;
+  padding:6px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  border:none;
+  font-size:14px;
+}
+
+.tool-row{
+  display:flex;
+  justify-content:center;
+  gap:25px;
+  margin-top:15px;
+  flex-wrap:wrap;
+}
+
+.tool-btn{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  cursor:pointer;
+}
+
+.tool-btn .icon{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #333;
+  font-size:26px;
+  background:white;
+}
+
+.tool-btn .label{
+  margin-top:6px;
+  font-size:13px;
+}
+
+#preview{
+  display:none;
+  text-align:left;
+}
+
+button, .smallBtn, .play-tts {
+  transition: all 0.1s ease;
+}
+
+button:active, .smallBtn:active, .play-tts:active {
+  transform: scale(0.95);
+}
+
+.tool-btn:active .icon {
+  transform: scale(0.92);
+  background:#eee;
+}
+
+.lang-row {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:8px 0;
+}
+
+.lang-col {
+  flex:1;
+  min-width:200px;
+  background:#f9f9f9;
+  border-radius:8px;
+  padding:8px;
+}
+
+.lang-col h4 {
+  margin:0 0 6px 0;
+  font-size:14px;
+  color:#333;
+}
+
+.tts-info {
+  font-size:11px;
+  color:#999;
+  margin-top:4px;
+}
+
+/* Preview grid */
+.preview-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:14px;
+  margin-top:10px;
+}
+
+.preview-cell {
+  background:white;
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+  box-shadow:0 1px 4px rgba(0,0,0,0.08);
+}
+
+.preview-cell img {
+  max-width:100%;
+  max-height:120px;
+  border-radius:8px;
+  margin:0 auto 8px;
+}
+
+.preview-cell .cell-label {
+  font-size:15px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.preview-cell .speak-btn {
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  font-size:14px;
+  margin:4px;
+}
+
+.speak-sv { background:#1976D2; color:white; }
+.speak-ar { background:#7B1FA2; color:white; }
+
+/* QR modal */
+#qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;}
+#qr-modal.on{display:flex;}
+.qr-box{background:#fff;border-radius:20px;padding:28px 24px;text-align:center;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+.qr-heading{font-size:16px;font-weight:700;color:#333;margin-bottom:4px;}
+.qr-url{font-size:11px;color:#999;margin-bottom:14px;word-break:break-all;}
+#qr-canvas{border-radius:8px;margin-bottom:14px;}
+.qr-dl{padding:10px 22px;background:#4CAF50;color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;margin:4px;}
+.qr-cl{padding:10px 22px;background:#eee;color:#333;border:none;border-radius:50px;font-size:14px;cursor:pointer;margin:4px;}
+
+/* Spinner */
+#link-spinner{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;align-items:center;justify-content:center;}
+#link-spinner.on{display:flex;}
+.sp-ring{width:54px;height:54px;border:6px solid rgba(255,255,255,0.2);border-top:6px solid #c87941;border-radius:50%;animation:sp-spin 0.75s linear infinite;}
+@keyframes sp-spin{to{transform:rotate(360deg);}}
+
+</style>
+</head>
+
+<body>
+
+<h2>Språktavla – Byggare</h2>
+
+<div class="section">
+  <input type="text" id="title" placeholder="Titel på språktavlan" oninput="updateData()">
+</div>
+
+<div class="section" style="text-align:left;padding:14px 18px;">
+  <b>🌐 Välj språk</b><br>
+  <div style="margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+    <label style="font-size:14px;">
+      <input type="checkbox" id="langSV" checked onchange="render()"> 🇸🇪 Svenska
+    </label>
+    <label style="font-size:14px;">
+      <input type="checkbox" id="langAR" checked onchange="render()"> 🇸🇦 Arabiska (العربية)
+    </label>
+    <label style="font-size:14px;">
+      <input type="checkbox" id="langSO" onchange="render()"> 🇸🇴 Somaliska
+    </label>
+    <label style="font-size:14px;">
+      <input type="checkbox" id="langEN" onchange="render()"> 🇬🇧 Engelska
+    </label>
+  </div>
+</div>
+
+<div id="cells"></div>
+
+<button onclick="addCell()">➕ Lägg till ruta</button>
+
+<div class="tool-row">
+
+  <div class="tool-btn" onclick="downloadHTML()">
+    <div class="icon">📄</div>
+    <div class="label">Ladda ner HTML</div>
+  </div>
+
+  <div class="tool-btn" onclick="exportJSON()">
+    <div class="icon">⬇️</div>
+    <div class="label">Ladda ner JSON</div>
+  </div>
+
+  <div class="tool-btn" onclick="importJSON()">
+    <div class="icon">⬆️</div>
+    <div class="label">Ladda upp JSON</div>
+  </div>
+
+  <div class="tool-btn" onclick="createLink()">
+    <div class="icon">🔗</div>
+    <div class="label">Skapa länk</div>
+  </div>
+
+</div>
+
+<br>
+
+<button onclick="generatePreview()">▶️ Generera preview</button>
+
+<div id="preview" class="section">
+  <h3 id="previewTitle"></h3>
+  <div class="preview-grid" id="previewGrid"></div>
+</div>
+
+<script>
+
+/* ===== DATA ===== */
+let boardData = { title:"", cells:[] };
+
+const LANGS = [
+  { id:"langSV", code:"sv-SE",  label:"🇸🇪 Svenska",         dir:"ltr" },
+  { id:"langAR", code:"ar-SA",  label:"🇸🇦 العربية",         dir:"rtl" },
+  { id:"langSO", code:"so-SO",  label:"🇸🇴 Af Soomaali",     dir:"ltr" },
+  { id:"langEN", code:"en-US",  label:"🇬🇧 English",         dir:"ltr" },
+];
+
+function activeLangs(){
+  return LANGS.filter(l => document.getElementById(l.id)?.checked);
+}
+
+/* ===== CLICK FEEDBACK ===== */
+function clickFeedback(){
+  try{
+    const audio = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=");
+    audio.volume = 0.2;
+    audio.play();
+  }catch(e){}
+}
+
+document.addEventListener("click", e=>{
+  if(e.target.tagName === "BUTTON" || e.target.closest(".tool-btn")){
+    clickFeedback();
+  }
+});
+
+/* ===== TTS ===== */
+function speak(text, langCode){
+  if(!text){ alert("Ingen text att läsa upp."); return; }
+  const synth = window.speechSynthesis;
+  if(!synth){ alert("Din webbläsare stöder inte text-till-tal."); return; }
+  synth.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = langCode;
+  // Försök hitta en röst som matchar
+  const voices = synth.getVoices();
+  const match = voices.find(v => v.lang.startsWith(langCode.split("-")[0]));
+  if(match) utt.voice = match;
+  utt.rate = 0.9;
+  synth.speak(utt);
+}
+
+// Ladda röster (Chrome kräver detta)
+window.speechSynthesis.onvoiceschanged = ()=>{};
+
+/* ===== RENDER ===== */
+function render(){
+  const container = document.getElementById("cells");
+  container.innerHTML = "";
+  const langs = activeLangs();
+
+  boardData.cells.forEach((cell, i)=>{
+    const div = document.createElement("div");
+    div.className = "section cell";
+
+    let langsHtml = langs.map(lang => {
+      const val = cell.texts?.[lang.code] || "";
+      return `
+        <div class="lang-col">
+          <h4>${lang.label}</h4>
+          <div class="tts-row">
+            <input type="text"
+              value="${escHtml(val)}"
+              placeholder="Skriv text..."
+              dir="${lang.dir}"
+              oninput="boardData.cells[${i}].texts['${lang.code}']=this.value">
+            <button class="play-tts" onclick="speak(boardData.cells[${i}].texts['${lang.code}'],'${lang.code}')">🔊</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    div.innerHTML = `
+      <b>Ruta ${i+1}</b><br>
+
+      <div>
+        📷 <input type="file" accept="image/*" onchange="loadImage(event,${i})" style="width:auto;margin:6px 0;">
+      </div>
+      ${cell.img ? `<img src="${cell.img}">` : ''}
+
+      <div class="lang-row">${langsHtml}</div>
+
+      <div style="margin-top:6px;">
+        <button class="smallBtn" onclick="moveUp(${i})">🔼</button>
+        <button class="smallBtn" onclick="moveDown(${i})">🔽</button>
+        <button class="smallBtn" onclick="removeCell(${i})">🗑</button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+/* ===== CELLS ===== */
+function addCell(){
+  boardData.cells.push({ img:"", texts:{} });
+  render();
+}
+
+function removeCell(i){
+  boardData.cells.splice(i,1);
+  render();
+}
+
+function moveUp(i){
+  if(i===0) return;
+  [boardData.cells[i], boardData.cells[i-1]] = [boardData.cells[i-1], boardData.cells[i]];
+  render();
+}
+
+function moveDown(i){
+  if(i===boardData.cells.length-1) return;
+  [boardData.cells[i], boardData.cells[i+1]] = [boardData.cells[i+1], boardData.cells[i]];
+  render();
+}
+
+/* ===== IMAGE ===== */
+function loadImage(e,i){
+  const file = e.target.files[0];
+  if(!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    img.onload = function(){
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const maxW = 600;
+      let w = img.width, h = img.height;
+      if(w > maxW){ h = h*(maxW/w); w = maxW; }
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob){
+        const r2 = new FileReader();
+        r2.onload = function(){ boardData.cells[i].img = r2.result; render(); };
+        r2.readAsDataURL(blob);
+      }, "image/jpeg", 0.6);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ===== DATA ===== */
+function updateData(){
+  boardData.title = document.getElementById("title").value;
+}
+
+function escHtml(s){
+  return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ===== PREVIEW ===== */
+function generatePreview(){
+  updateData();
+  const langs = activeLangs();
+
+  document.getElementById("previewTitle").textContent = boardData.title;
+
+  const grid = document.getElementById("previewGrid");
+  grid.innerHTML = "";
+
+  boardData.cells.forEach(cell => {
+    if(!cell.img && langs.every(l => !cell.texts?.[l.code])) return;
+
+    const div = document.createElement("div");
+    div.className = "preview-cell";
+
+    if(cell.img) div.innerHTML += `<img src="${cell.img}">`;
+
+    // Visa första tillgängliga texten som rubrik
+    const firstText = langs.map(l=>cell.texts?.[l.code]).find(t=>t);
+    if(firstText) div.innerHTML += `<div class="cell-label">${escHtml(firstText)}</div>`;
+
+    langs.forEach(lang => {
+      const txt = cell.texts?.[lang.code];
+      if(!txt) return;
+      const colorClass = lang.id==="langAR" ? "speak-ar" : "speak-sv";
+      div.innerHTML += `<button class="speak-btn ${colorClass}"
+        onclick="speak('${escHtml(txt)}','${lang.code}')">
+        🔊 ${lang.label}</button>`;
+    });
+
+    grid.appendChild(div);
+  });
+
+  document.getElementById("preview").style.display = "block";
+}
+
+/* ===== DOWNLOAD HTML ===== */
+function downloadHTML(){
+  updateData();
+  const langs = activeLangs();
+
+  let cellsHtml = "";
+  boardData.cells.forEach(cell => {
+    if(!cell.img && langs.every(l => !cell.texts?.[l.code])) return;
+    const firstText = langs.map(l=>cell.texts?.[l.code]).find(t=>t);
+
+    let btns = langs.map(lang => {
+      const txt = cell.texts?.[lang.code];
+      if(!txt) return "";
+      const colorClass = lang.id==="langAR" ? "speak-ar" : "speak-sv";
+      return `<button class="speak-btn ${colorClass}" onclick="speak('${escHtml(txt)}','${lang.code}')">🔊 ${lang.label}</button>`;
+    }).join("");
+
+    cellsHtml += `
+      <div class="preview-cell">
+        ${cell.img ? `<img src="${cell.img}">` : ""}
+        ${firstText ? `<div class="cell-label">${escHtml(firstText)}</div>` : ""}
+        ${btns}
+      </div>`;
+  });
+
+  const safeTitle = escHtml(boardData.title);
+
+  const html = `<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${safeTitle}</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:20px;max-width:900px;margin:auto;text-align:center;}
+h2{margin-bottom:20px;}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;text-align:center;}
+.preview-cell{background:white;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.preview-cell img{max-width:100%;max-height:120px;border-radius:8px;display:block;margin:0 auto 8px;}
+.cell-label{font-size:15px;font-weight:bold;margin-bottom:8px;}
+.speak-btn{display:inline-block;padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:14px;margin:4px;}
+.speak-sv{background:#1976D2;color:white;}
+.speak-ar{background:#7B1FA2;color:white;}
+</style>
+</head>
+<body>
+<h2>${safeTitle}</h2>
+<div class="preview-grid">
+${cellsHtml}
+</div>
+<script>
+function speak(text,lang){
+  var synth=window.speechSynthesis;
+  synth.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang=lang;
+  u.rate=0.9;
+  var voices=synth.getVoices();
+  var m=voices.find(function(v){return v.lang.startsWith(lang.split('-')[0]);});
+  if(m) u.voice=m;
+  synth.speak(u);
+}
+window.speechSynthesis.onvoiceschanged=function(){};
+<\/script>
+</body>
+</html>`;
+
+  download(html, "spraaktavla.html", "text/html");
+}
+
+/* ===== JSON ===== */
+function exportJSON(){
+  updateData();
+  download(JSON.stringify(boardData, null, 2), "spraaktavla.json", "application/json");
+}
+
+function importJSON(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.onchange = e => {
+    const r = new FileReader();
+    r.onload = () => {
+      try{
+        const raw = JSON.parse(r.result);
+        boardData = {
+          title: raw.title || "",
+          cells: (raw.cells || []).map(c => ({
+            img: c.img || "",
+            texts: c.texts || {}
+          }))
+        };
+        document.getElementById("title").value = boardData.title;
+        render();
+        alert("Språktavla laddad!");
+      }catch{
+        alert("Ogiltig JSON-fil");
+      }
+    };
+    r.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+/* ===== UPLOAD VIA VERCEL ===== */
+async function uploadFile(path, content, repo) {
+  const res = await fetch(
+    "https://upload-api-kappa.vercel.app/api/upload",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path, content, repo })
+    }
+  );
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || "Upload failed");
+  return data;
+}
+
+/* ===== CREATE LINK ===== */
+async function createLink(){
+  updateData();
+
+  const langs = activeLangs();
+  const hasContent = boardData.cells.some(c => c.img || langs.some(l => c.texts?.[l.code]));
+
+  if(!boardData.title && !hasContent){
+    alert("Språktavlan är tom.");
+    return;
+  }
+
+  const id = Date.now();
+  const basePath = "spraaktavla-" + id;
+  const repo = "Sukrutaraj/checklist-pages";
+
+    document.getElementById('link-spinner').classList.add('on');
+
+  try {
+    let cellsHtml = "";
+
+    for(let i = 0; i < boardData.cells.length; i++){
+      const cell = boardData.cells[i];
+      if(!cell.img && langs.every(l => !cell.texts?.[l.code])) continue;
+
+      const firstText = langs.map(l=>cell.texts?.[l.code]).find(t=>t) || "";
+
+      let imgTag = "";
+      if(cell.img){
+        const imgName = basePath + "-img-" + i + ".jpg";
+        const base64 = cell.img.split(",")[1];
+        await uploadFile(imgName, base64, repo);
+        await new Promise(r=>setTimeout(r,300));
+        imgTag = "<img src='https://sukrutaraj.github.io/checklist-pages/" + imgName + "'>";
+      }
+
+      let btns = langs.map(lang => {
+        const txt = cell.texts?.[lang.code];
+        if(!txt) return "";
+        const colorClass = lang.id==="langAR" ? "speak-ar" : "speak-sv";
+        const safeTxt = txt.replace(/'/g,"\\'").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        return "<button class='speak-btn " + colorClass + "' onclick=\"speak('" + safeTxt + "','" + lang.code + "')\">🔊 " + lang.label + "</button>";
+      }).join("");
+
+      cellsHtml += "<div class='preview-cell'>" + imgTag;
+      if(firstText) cellsHtml += "<div class='cell-label'>" + firstText.replace(/</g,"&lt;").replace(/>/g,"&gt;") + "</div>";
+      cellsHtml += btns + "</div>";
+    }
+
+    const safeTitle = boardData.title.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+    const css = [
+      "body{font-family:sans-serif;background:#f5f5f5;padding:20px;max-width:900px;margin:auto;text-align:center;}",
+      "h2{margin-bottom:20px;}",
+      ".preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;text-align:center;}",
+      ".preview-cell{background:white;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}",
+      ".preview-cell img{max-width:100%;max-height:120px;border-radius:8px;display:block;margin:0 auto 8px;}",
+      ".cell-label{font-size:15px;font-weight:bold;margin-bottom:8px;}",
+      ".speak-btn{display:inline-block;padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-size:14px;margin:4px;}",
+      ".speak-sv{background:#1976D2;color:white;}",
+      ".speak-ar{background:#7B1FA2;color:white;}"
+    ].join("\n");
+
+    const scriptLines = [
+      "function speak(text,lang){",
+      "  var synth=window.speechSynthesis;",
+      "  synth.cancel();",
+      "  var u=new SpeechSynthesisUtterance(text);",
+      "  u.lang=lang;",
+      "  u.rate=0.9;",
+      "  var voices=synth.getVoices();",
+      "  var m=voices.find(function(v){return v.lang.startsWith(lang.split('-')[0]);});",
+      "  if(m) u.voice=m;",
+      "  synth.speak(u);",
+      "}",
+      "window.speechSynthesis.onvoiceschanged=function(){};"
+    ].join("\n");
+
+    const sharedHtml = [
+      "<!DOCTYPE html>",
+      "<html lang='sv'>",
+      "<head>",
+      "<meta charset='UTF-8'>",
+      "<meta name='viewport' content='width=device-width, initial-scale=1.0'>",
+      "<title>" + safeTitle + "</title>",
+      "<style>", css, "</style>",
+      "</head>",
+      "<body>",
+      "<h2>" + safeTitle + "</h2>",
+      "<div class='preview-grid'>",
+      cellsHtml,
+      "</div>",
+      "<script>",
+      scriptLines,
+      "<" + "/script>",
+      "</body>",
+      "</html>"
+    ].join("\n");
+
+    const htmlName = basePath + ".html";
+
+    await uploadFile(
+      htmlName,
+      btoa(unescape(encodeURIComponent(sharedHtml))),
+      repo
+    );
+
+    const url = "https://sukrutaraj.github.io/checklist-pages/" + htmlName;
+
+    let copied = false;
+    try{ await navigator.clipboard.writeText(url); copied = true; }catch(e){}
+
+    document.getElementById('link-spinner').classList.remove('on');
+    document.getElementById('qr-copied').textContent = copied ? '✔ Länken är kopierad till urklipp' : '⚠️ Kopiera länken manuellt';
+    document.getElementById('qr-copied').style.color = copied ? '#4CAF50' : '#e67e22';
+    showQR(url, document.getElementById('title') ? document.getElementById('title').value || 'Språktavla' : 'Språktavla');
+
+  }catch(err){
+    document.getElementById('link-spinner').classList.remove('on');
+    alert("Fel: " + err.message);
+  }
+}
+
+/* ===== DOWNLOAD ===== */
+function download(data, name, type="text/plain"){
+  const blob = new Blob([data],{type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+/* INIT */
+addCell();
+addCell();
+addCell();
+
+
+/* ===== QR KOD ===== */
+function showQR(url, title) {
+  document.getElementById('qr-h').textContent = title || 'QR-kod';
+  document.getElementById('qr-u').textContent = url;
+  document.getElementById('qr-modal').classList.add('on');
+  var canvas = document.getElementById('qr-canvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,200,200);
+  function doQR() {
+    var div = document.createElement('div');
+    new QRCode(div, {text:url,width:200,height:200,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+    setTimeout(function(){
+      var el = div.querySelector('canvas') || div.querySelector('img');
+      if(!el) return;
+      if(el.tagName==='CANVAS'){ ctx.drawImage(el,0,0,200,200); }
+      else { var i=new Image(); i.onload=function(){ctx.drawImage(i,0,0,200,200);}; i.src=el.src; }
+    }, 400);
+  }
+  if(typeof QRCode==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload=doQR; document.head.appendChild(s);
+  } else { doQR(); }
+}
+
+function dlQRpdf() {
+  var title = document.getElementById('qr-h').textContent;
+  var url   = document.getElementById('qr-u').textContent;
+  var canvas = document.getElementById('qr-canvas');
+  function build(Lib) {
+    var doc = new Lib({orientation:'portrait',unit:'mm',format:'a4'});
+    var W = doc.internal.pageSize.getWidth();
+    doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text(title, W/2, 30, {align:'center'});
+    var sz=100, x=(W-sz)/2;
+    doc.addImage(canvas.toDataURL('image/png'),'PNG',x,45,sz,sz);
+    doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
+    doc.text(url, W/2, 158, {align:'center', maxWidth:W-30});
+    doc.save((title.replace(/[^a-zA-Z0-9 ]/g,'_')||'qrkod')+'_QR.pdf');
+  }
+  function load(cb){
+    if(typeof jsPDF!=='undefined'){cb(jsPDF);return;}
+    if(window.jspdf){cb(window.jspdf.jsPDF);return;}
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=function(){cb(window.jspdf?window.jspdf.jsPDF:jsPDF);};
+    document.head.appendChild(s);
+  }
+  load(build);
+}
+
+</script>
+
+
+
+<div id="link-spinner"><div class="sp-ring"></div></div>
+<div id="qr-modal">
+  <div class="qr-box">
+    <div class="qr-heading" id="qr-h"></div>
+    <div class="qr-url" id="qr-u"></div>
+    <canvas id="qr-canvas" width="200" height="200"></canvas><br>
+    <button class="qr-dl" onclick="dlQRpdf()">&#11015;&#65039; Ladda ner PDF</button>
+    <div id="qr-copied" style="font-size:12px;margin-bottom:10px;"></div>
+    <button class="qr-cl" onclick="document.getElementById('qr-modal').classList.remove('on')">Stäng</button>
+  </div>
+</div>
+</body>
+</html
+</body>
+</html>
