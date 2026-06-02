@@ -325,18 +325,23 @@ function speak(text, langCode){
   const synth = window.speechSynthesis;
   if(!synth){ alert("Din webbläsare stöder inte text-till-tal."); return; }
   synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = langCode;
-  // Försök hitta en röst som matchar
+  function doSpeak(){
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = langCode;
+    utt.rate = 0.9;
+    const voices = synth.getVoices();
+    const base = langCode.split("-")[0];
+    const match = voices.find(v => v.lang === langCode) || voices.find(v => v.lang.startsWith(base));
+    if(match) utt.voice = match;
+    synth.speak(utt);
+  }
   const voices = synth.getVoices();
-  const match = voices.find(v => v.lang.startsWith(langCode.split("-")[0]));
-  if(match) utt.voice = match;
-  utt.rate = 0.9;
-  synth.speak(utt);
+  if(voices.length > 0){ doSpeak(); }
+  else {
+    synth.onvoiceschanged = function(){ synth.onvoiceschanged = null; doSpeak(); };
+    setTimeout(function(){ if(!synth.speaking) doSpeak(); }, 500);
+  }
 }
-
-// Ladda röster (Chrome kräver detta)
-window.speechSynthesis.onvoiceschanged = ()=>{};
 
 /* ===== RENDER ===== */
 function render(){
