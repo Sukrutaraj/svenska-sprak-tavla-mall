@@ -325,6 +325,16 @@ function speak(text, langCode){
   const synth = window.speechSynthesis;
   if(!synth){ alert("Din webbläsare stöder inte text-till-tal."); return; }
   synth.cancel();
+  // Arabiska via Google Translate TTS (Web Speech API stöder ej arabiska i Chrome)
+  if(langCode.startsWith("ar")){
+    var url="https://translate.google.com/translate_tts?ie=UTF-8&q="+encodeURIComponent(text)+"&tl=ar&client=tw-ob";
+    var audio=new Audio(url);
+    audio.play().catch(function(){
+      var utt=new SpeechSynthesisUtterance(text);
+      utt.lang=langCode; utt.rate=0.9; synth.speak(utt);
+    });
+    return;
+  }
   function doSpeak(){
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = langCode;
